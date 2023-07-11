@@ -131,7 +131,9 @@ exports.updateAvatar = async (req, res) => {
   } catch (error) {
     console.log(error.message);
     await fs.unlink(tmpPath);
-    throw HttpError(error.status, error.message);
+    return res
+      .status(404)
+      .json({ error: error.status, message: error.message });
   }
   const avatarsPath = `/public/avatars/${filename}`;
   const updateUser = await User.findByIdAndUpdate(
@@ -153,7 +155,7 @@ exports.verifyTokenfromEmail = async (req, res, next) => {
     const user = await User.findOne({ verificationToken });
 
     if (!user) {
-      throw httpErr(404, "User not found");
+      res.status(404).json({ message: "User not found" });
     }
 
     await User.findByIdAndUpdate(user._id, {
@@ -174,11 +176,11 @@ exports.verifyAgain = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      throw httpErr(401, "Email is wrong");
+      res.status(401).json({ message: "Email is wrong" });
     }
 
     if (user.verify) {
-      throw httpErr(400, "Verification has already been passed");
+      res.status(400).json({ message: "Verification has already been passed" });
     }
 
     const verifyEmail = {

@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const userAuth = require("../middleware/auth");
+// const validateEmail = require("../middleware/validateEmail");
 const upload = require("../middleware/upload");
 const {
   register,
