@@ -167,7 +167,7 @@ exports.verifyTokenfromEmail = async (req, res, next) => {
       message: "Verification successful",
     });
   } catch (error) {
-    next(error);
+    return error;
   }
 };
 exports.verifyAgain = async (req, res) => {
@@ -195,6 +195,6 @@ exports.verifyAgain = async (req, res) => {
       message: "Verification email sent",
     });
   } catch (error) {
-    next(error);
+    return error;
   }
 };

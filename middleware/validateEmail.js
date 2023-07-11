@@ -1,7 +1,7 @@
-const { emailValidator } = require("../middleware/emailValidator");
+const emailValidator = require("../middleware/emailValidator");
 
 const validateEmail = () => {
-  const validate = async (req, res, next) => {
+  const validator = async (req, res, next) => {
     if (Object.keys(req.body).length === 0) {
       res.status(400).json({ message: "Missing required field email" });
     }
@@ -11,7 +11,7 @@ const validateEmail = () => {
     }
     next();
   };
-  return validate;
+  return validator;
 };
 
 module.exports = validateEmail;
