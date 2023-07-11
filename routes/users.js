@@ -8,11 +8,15 @@ const {
   getCurrent,
   logout,
   updateAvatar,
+  verifyTokenfromEmail,
+  verifyAgain,
 } = require("../controllers/Auth");
 
 router.post("/signup", register);
 router.post("/login", login);
 router.get("/current", userAuth, getCurrent);
+router.get("/verify/:verificationToken", verifyTokenfromEmail);
+router.post("/verify", verifyAgain);
 router.post("/logout", userAuth, logout);
 router.patch("/", userAuth, update);
 router.patch("/avatars", userAuth, upload.single("avatars"), updateAvatar);
