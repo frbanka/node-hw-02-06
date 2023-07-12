@@ -7,6 +7,9 @@ const fs = require("fs/promises");
 const path = require("path");
 const Jimp = require("jimp");
 
+const { v4: uuidv4 } = require("uuid");
+const sendVerifyEmail = require("../config/verifyEmail");
+const BASE_URL = "http://localhost:3000";
 require("dotenv").config();
 
 exports.register = async (req, res) => {
@@ -18,16 +21,24 @@ exports.register = async (req, res) => {
         message: "Email in use",
       });
     } else {
+      const verifyToken = uuidv4();
       bcrypt.hash(password, 10).then(async (hash) => {
         await User.create({
           email,
           password: hash,
+          verificationToken: verifyToken,
         }).then((user) =>
           res.status(201).json({
             message: "User successfully created",
             user,
           })
         );
+        const verifyEmail = {
+          to: email,
+          subject: "Verify email",
+          html: `<a target="_blank" href="${BASE_URL}/users/verify/${verifyToken}">Click verify email</a>`,
+        };
+        await sendVerifyEmail(verifyEmail);
       });
     }
   } catch (error) {
@@ -41,6 +52,7 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   const registeredUser = await User.findOne({ email });
+
   // Check if username and password is provided
   if (!email || !password) {
     return res.status(400).json({
@@ -52,6 +64,9 @@ exports.login = async (req, res) => {
       message: "Login not successful",
       error: "User not found",
     });
+  }
+  if (registeredUser.verify === false) {
+    return res.status(400).send("verify your email");
   }
   const isValidPassword = await bcrypt.compare(
     password,
@@ -116,7 +131,9 @@ exports.updateAvatar = async (req, res) => {
   } catch (error) {
     console.log(error.message);
     await fs.unlink(tmpPath);
-    throw HttpError(error.status, error.message);
+    return res
+      .status(404)
+      .json({ error: error.status, message: error.message });
   }
   const avatarsPath = `/public/avatars/${filename}`;
   const updateUser = await User.findByIdAndUpdate(
@@ -131,4 +148,53 @@ exports.updateAvatar = async (req, res) => {
       },
     },
   });
+};
+exports.verifyTokenfromEmail = async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+    const user = await User.findOne({ verificationToken });
+
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+    }
+
+    await User.findByIdAndUpdate(user._id, {
+      verificationToken: null,
+      verify: true,
+    });
+
+    res.json({
+      message: "Verification successful",
+    });
+  } catch (error) {
+    return error;
+  }
+};
+exports.verifyAgain = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      res.status(401).json({ message: "Email is wrong" });
+    }
+
+    if (user.verify) {
+      res.status(400).json({ message: "Verification has already been passed" });
+    }
+
+    const verifyEmail = {
+      to: email,
+      subject: "Verify email",
+      html: `<a target="_blank" href="${BASE_URL}/users/verify/${user.verificationToken}">Click verify email</a>`,
+    };
+
+    await sendVerifyEmail(verifyEmail);
+
+    res.json({
+      message: "Verification email sent",
+    });
+  } catch (error) {
+    return error;
+  }
 };

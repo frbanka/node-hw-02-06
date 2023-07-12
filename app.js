@@ -11,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/contacts", contactsRouter);
 app.use("/users", usersRouter);
+app.use(express.static("public"));
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not found" });
